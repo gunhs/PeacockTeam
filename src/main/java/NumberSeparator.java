@@ -5,13 +5,12 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class NumberSeparator {
-    HashSet<Integer> numbersFirstGroupLines = new HashSet<>();
     HashSet<Integer> numbersBadLines = new HashSet<>();
+    TreeMap<Integer, Set<Integer>> groups = new TreeMap<>();
+    int countOfGroup = 0;
 
     public void numberSeparate(List<String> lines, Path path) throws IOException {
         List<String[]> wordsInLine = new ArrayList<>();
-        Set<String> firstGroup = new LinkedHashSet<>();
-        Set<String> secondGroup = new LinkedHashSet<>();
         int i = 1;
         for (int j = 0; j < lines.size(); j++) {
             String[] words = lines.get(j).split(";");
@@ -27,66 +26,82 @@ public class NumberSeparator {
         for (int j = 0; j < maxCountElemntIsString; j++) {
             lineWalker(lines, wordsInLine, j);
         }
-        for (Integer num : numbersFirstGroupLines) {
-            if (!numbersBadLines.contains(num)) {
-                firstGroup.add(lines.get(num));
-            }
-        }
-        for (int j = 0; j < lines.size(); j++) {
-            if (!numbersFirstGroupLines.contains(j) && !numbersBadLines.contains(j)) {
-                secondGroup.add(lines.get(j));
-            }
-        }
-        if (firstGroup.isEmpty() && secondGroup.isEmpty()) {
-            System.out.println("строки не обнаружены");
-            return;
-        }
-        String firstTypeGroup = "имеют совпадения";
-        String secondTypeGroup = "не имеют совпадений";
-        if (firstGroup.size() > secondGroup.size()) {
-            fileWriter(firstGroup, secondGroup, firstTypeGroup, secondTypeGroup, path);
-        } else {
-            fileWriter(secondGroup, firstGroup, secondTypeGroup, firstTypeGroup, path);
+
+        StringBuilder stringBuilder = new StringBuilder("Всего групп " + groups.size() + "\n");
+        groups.forEach((k, v) -> stringBuilder.append(fileWriter(k, v, lines)));
+        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+            writer.write(stringBuilder.toString().strip());
         }
     }
 
-    private void fileWriter(Set<String> firstGroup, Set<String> secondGroup,
-                            String typeFirstGroup, String typeSecondGroup, Path path) throws IOException {
-
-        String stringFirstGroup = "Первая группа (" + typeFirstGroup + "): " + firstGroup.size() + " элементов\n" +
-                String.join("\n", firstGroup);
-        String stringSecondGroup = secondGroup.isEmpty() ? "" :
-                "\nВторая группа (" + typeSecondGroup + "): " + secondGroup.size() + " элементов\n" +
-                        String.join("\n", secondGroup);
-        String result = stringFirstGroup + stringSecondGroup;
-        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
-            writer.write(result);
+    private String fileWriter(int numberGroup, Set<Integer> numberLines, List<String> lines) {
+        Set<String> linesInGroup = new LinkedHashSet<>();
+        TreeSet<Integer> numbers = new TreeSet<>(numberLines);
+        for (int i : numbers) {
+            linesInGroup.add(lines.get(i));
         }
+        return "Группа " + numberGroup + "\n" + String.join("\n", linesInGroup) + "\n";
     }
 
     private void lineWalker(List<String> lines, List<String[]> wordsInLine, int j) {
         HashMap<String, Integer> map = new HashMap<>();
+        HashMap<String, Set<Integer>> groupInColumn = new HashMap<>();
         for (int k = 0; k < lines.size(); k++) {
-            if (j > wordsInLine.get(k).length - 1) {
+            if ((j > wordsInLine.get(k).length - 1) || numbersBadLines.contains(k)) {
                 continue;
             }
             String currentString = wordsInLine.get(k)[j];
-            if (numbersFirstGroupLines.contains(k) || numbersBadLines.contains(k)
-                    || currentString.matches("\"\"")) {
+            if (currentString.matches("\"\"")) {
                 continue;
             }
             if (map.containsKey(currentString)) {
-                numbersFirstGroupLines.add(map.get(currentString));
-                numbersFirstGroupLines.add(k);
-                continue;
+                int numberOldLine = map.get(currentString);
+                if (checkGroup(k, numberOldLine, groupInColumn.get(currentString))) {
+                    groupInColumn.remove(currentString);
+                    map.put(currentString, k);
+                    continue;
+                }
+                if (groupInColumn.get(currentString) == null) {
+                    Set<Integer> numbersLinesInGroup = new LinkedHashSet<>();
+                    numbersLinesInGroup.add(numberOldLine);
+                    numbersLinesInGroup.add(k);
+                    groupInColumn.put(currentString, numbersLinesInGroup);
+                } else {
+                    groupInColumn.get(currentString).add(k);
+                }
             }
             map.put(currentString, k);
+        }
+
+        for (Map.Entry<String, Set<Integer>> entry : groupInColumn.entrySet()) {
+            countOfGroup++;
+            groups.put(countOfGroup, entry.getValue());
         }
     }
 
     public List<String> loadFile(Path path) throws IOException {
         return Files.readAllLines(path);
     }
+
+    private boolean checkGroup(int k, int numberOldLine, Set<Integer> oldNumbers) {
+        for (Map.Entry<Integer, Set<Integer>> entry : groups.entrySet()) {
+            if (entry.getValue().contains(k)) {
+                if (oldNumbers != null) {
+                    oldNumbers.forEach(n -> groups.get(entry.getKey()).add(n));
+                }
+                groups.get(entry.getKey()).add(numberOldLine);
+                return true;
+            } else if (entry.getValue().contains(numberOldLine)) {
+                groups.get(entry.getKey()).add(k);
+                if (oldNumbers != null) {
+                    oldNumbers.forEach(n -> groups.get(entry.getKey()).add(n));
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     private boolean checkLine(String[] words) {
         for (String w : words) {

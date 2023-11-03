@@ -14,8 +14,8 @@ public class TestMain {
     void testThreeLineMatch() throws IOException {
         NumberSeparator numberSeparator = new NumberSeparator();
         Path path = Paths.get("out.txt");
-        List<String> srcLines = numberSeparator.loadFile(Paths.get("data/testThreeLineMatchSrc.txt"));
-        List<String> expectedLines = numberSeparator.loadFile(Paths.get("data/testThreeLineMatchDst.txt"));
+        List<String> srcLines = numberSeparator.loadFile(Paths.get("data/tests/testThreeLineMatchSrc.txt"));
+        List<String> expectedLines = numberSeparator.loadFile(Paths.get("data/tests/testThreeLineMatchDst.txt"));
         numberSeparator.numberSeparate(srcLines, path);
         List<String> actualLines = numberSeparator.loadFile(path);
         assertIterableEquals(expectedLines, actualLines);
@@ -26,8 +26,8 @@ public class TestMain {
     void testThreeLineNonMatch() throws IOException {
         NumberSeparator numberSeparator = new NumberSeparator();
         Path path = Paths.get("out.txt");
-        List<String> srcLines = numberSeparator.loadFile(Paths.get("data/testThreeLineNonMatchSrc.txt"));
-        List<String> expectedLines = numberSeparator.loadFile(Paths.get("data/testThreeLineNonMatchDst.txt"));
+        List<String> srcLines = numberSeparator.loadFile(Paths.get("data/tests/testThreeLineNonMatchSrc.txt"));
+        List<String> expectedLines = numberSeparator.loadFile(Paths.get("data/tests/testThreeLineNonMatchDst.txt"));
         numberSeparator.numberSeparate(srcLines, path);
         List<String> actualLines = numberSeparator.loadFile(path);
         assertIterableEquals(expectedLines, actualLines);
@@ -38,22 +38,59 @@ public class TestMain {
     void testThreeLineHalfMatch() throws IOException {
         NumberSeparator numberSeparator = new NumberSeparator();
         Path path = Paths.get("out.txt");
-        List<String> srcLines = numberSeparator.loadFile(Paths.get("data/testThreeLineHalfMatchSrc.txt"));
-        List<String> expectedLines = numberSeparator.loadFile(Paths.get("data/testThreeLineHalfMatchDst.txt"));
+        List<String> srcLines = numberSeparator.loadFile(Paths.get("data/tests/testThreeLineHalfMatchSrc.txt"));
+        List<String> expectedLines = numberSeparator.loadFile(Paths.get("data/tests/testThreeLineHalfMatchDst.txt"));
         numberSeparator.numberSeparate(srcLines, path);
         List<String> actualLines = numberSeparator.loadFile(path);
         assertIterableEquals(expectedLines, actualLines);
     }
 
     @Test
-    @DisplayName("3 строчки проверка дубликтов")
-    void testDuplicateLines() throws IOException {
+    @DisplayName("4 строчки проверка дубликтов")
+    void testThreeLineDuplicateLines() throws IOException {
         NumberSeparator numberSeparator = new NumberSeparator();
-        Path path = Paths.get("out.txt");
-        List<String> srcLines = numberSeparator.loadFile(Paths.get("data/testThreeLineDuplicateSrc.txt"));
-        List<String> expectedLines = numberSeparator.loadFile(Paths.get("data/testThreeLineDuplicateDst.txt"));
+        Path path = Paths.get("data/tests/testThreeLineDuplicateResult.txt");
+        List<String> srcLines = numberSeparator.loadFile(Paths.get("data/tests/testThreeLineDuplicateSrc.txt"));
+        List<String> expectedLines = numberSeparator.loadFile(Paths.get("data/tests/testThreeLineDuplicateDst.txt"));
         numberSeparator.numberSeparate(srcLines, path);
         List<String> actualLines = numberSeparator.loadFile(path);
         assertIterableEquals(expectedLines, actualLines);
     }
+
+    @Test
+    @DisplayName("2 строчки проверка дубликтов")
+    void testTwoLineDuplicateLines() throws IOException {
+        NumberSeparator numberSeparator = new NumberSeparator();
+        Path path = Paths.get("data/tests/testTwoLineDuplicateResult.txt");
+        List<String> srcLines = numberSeparator.loadFile(Paths.get("data/tests/testTwoLineDuplicateSrc.txt"));
+        List<String> expectedLines = numberSeparator.loadFile(Paths.get("data/tests/testTwoLineDuplicateDst.txt"));
+        numberSeparator.numberSeparate(srcLines, path);
+        List<String> actualLines = numberSeparator.loadFile(path);
+        assertIterableEquals(expectedLines, actualLines);
+    }
+
+    @Test
+    @DisplayName("5 строчек. 3 и 2 совпадения. Две группы")
+    void testFiveLineTwoGroup() throws IOException {
+        NumberSeparator numberSeparator = new NumberSeparator();
+        Path path = Paths.get("data/tests/testFiveLineTwoGroupResult.txt");
+        List<String> srcLines = numberSeparator.loadFile(Paths.get("data/tests/testFiveLineTwoGroupSrc.txt"));
+        List<String> expectedLines = numberSeparator.loadFile(Paths.get("data/tests/testFiveLineTwoGroupDst.txt"));
+        numberSeparator.numberSeparate(srcLines, path);
+        List<String> actualLines = numberSeparator.loadFile(path);
+        assertIterableEquals(expectedLines, actualLines);
+    }
+
+    @Test
+    @DisplayName("5 строчек. 4 и 2 совпадения. Одна группа")
+    void testFiveLineOneGroup() throws IOException {
+        NumberSeparator numberSeparator = new NumberSeparator();
+        Path path = Paths.get("data/tests/testFiveLineOneGroupResult.txt");
+        List<String> srcLines = numberSeparator.loadFile(Paths.get("data/tests/testFiveLineOneGroupSrc.txt"));
+        List<String> expectedLines = numberSeparator.loadFile(Paths.get("data/tests/testFiveLineOneGroupDst.txt"));
+        numberSeparator.numberSeparate(srcLines, path);
+        List<String> actualLines = numberSeparator.loadFile(path);
+        assertIterableEquals(expectedLines, actualLines);
+    }
+
 }
