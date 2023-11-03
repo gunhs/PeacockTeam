@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class NumberSeparator {
     HashSet<Integer> numbersBadLines = new HashSet<>();
@@ -27,18 +28,36 @@ public class NumberSeparator {
             lineWalker(lines, wordsInLine, j);
         }
 
+        TreeMap<Integer, Set<String[]>> groupLines = new TreeMap<>();
+        groups.forEach((k, v) -> {
+            Set<String[]> buffer = new HashSet<>();
+            v.forEach(n -> buffer.add(wordsInLine.get(n)));
+            groupLines.put(k, buffer);
+        });
+
+        Comparator<Integer> comparator = (key1, key2) -> {
+            int size1 = groupLines.get(key1).stream().mapToInt(l -> l.length)
+                    .max().orElse(0);
+            int size2 = groupLines.get(key2).stream().mapToInt(l -> l.length)
+                    .max().orElse(0);
+            return Integer.compare(size1, size2);
+        };
+        TreeMap<Integer, Set<String[]>> sortedMap = new TreeMap<>(comparator);
+        sortedMap.putAll(groupLines);
         StringBuilder stringBuilder = new StringBuilder("Всего групп " + groups.size() + "\n");
-        groups.forEach((k, v) -> stringBuilder.append(fileWriter(k, v, lines)));
+        AtomicInteger numberGroup = new AtomicInteger(1);
+        sortedMap.forEach((k, v) -> stringBuilder.append(fileWriter(numberGroup.getAndIncrement(), v)));
+//        groups.forEach((k, v) -> stringBuilder.append(fileWriter(k, v)));
         try (BufferedWriter writer = Files.newBufferedWriter(path)) {
             writer.write(stringBuilder.toString().strip());
         }
     }
 
-    private String fileWriter(int numberGroup, Set<Integer> numberLines, List<String> lines) {
+    private String fileWriter(int numberGroup, Set<String[]> words) {
         Set<String> linesInGroup = new LinkedHashSet<>();
-        TreeSet<Integer> numbers = new TreeSet<>(numberLines);
-        for (int i : numbers) {
-            linesInGroup.add(lines.get(i));
+        for (String[] i : words) {
+            String line = String.join(";", i);
+            linesInGroup.add(line);
         }
         return "Группа " + numberGroup + "\n" + String.join("\n", linesInGroup) + "\n";
     }

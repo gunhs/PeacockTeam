@@ -13,7 +13,7 @@ public class TestMain {
     @DisplayName("3 строчки с повторениями")
     void testThreeLineMatch() throws IOException {
         NumberSeparator numberSeparator = new NumberSeparator();
-        Path path = Paths.get("out.txt");
+        Path path = Paths.get("data/tests/testThreeLineMatchResult.txt");
         List<String> srcLines = numberSeparator.loadFile(Paths.get("data/tests/testThreeLineMatchSrc.txt"));
         List<String> expectedLines = numberSeparator.loadFile(Paths.get("data/tests/testThreeLineMatchDst.txt"));
         numberSeparator.numberSeparate(srcLines, path);
@@ -25,7 +25,7 @@ public class TestMain {
     @DisplayName("3 строчки без повторения")
     void testThreeLineNonMatch() throws IOException {
         NumberSeparator numberSeparator = new NumberSeparator();
-        Path path = Paths.get("out.txt");
+        Path path = Paths.get("data/tests/testThreeLineNonMatchResult.txt");
         List<String> srcLines = numberSeparator.loadFile(Paths.get("data/tests/testThreeLineNonMatchSrc.txt"));
         List<String> expectedLines = numberSeparator.loadFile(Paths.get("data/tests/testThreeLineNonMatchDst.txt"));
         numberSeparator.numberSeparate(srcLines, path);
@@ -37,7 +37,7 @@ public class TestMain {
     @DisplayName("3 строчки c повторениями и без")
     void testThreeLineHalfMatch() throws IOException {
         NumberSeparator numberSeparator = new NumberSeparator();
-        Path path = Paths.get("out.txt");
+        Path path = Paths.get("data/tests/testThreeLineHalfMatchResult.txt");
         List<String> srcLines = numberSeparator.loadFile(Paths.get("data/tests/testThreeLineHalfMatchSrc.txt"));
         List<String> expectedLines = numberSeparator.loadFile(Paths.get("data/tests/testThreeLineHalfMatchDst.txt"));
         numberSeparator.numberSeparate(srcLines, path);
