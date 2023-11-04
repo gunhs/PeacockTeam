@@ -22,6 +22,28 @@ public class NumberSeparator {
         for (int j = 0; j < maxCountElemntIsString; j++) {
             lineWalker(lineList, j);
         }
+
+        HashSet<Line> lineHashSet = new HashSet<>();
+        groups.forEach(g -> lineHashSet.addAll(g.getLines()));
+        Group groupDel = null;
+        for (Line line : lineHashSet) {
+            int repeatLine = 0;
+            for (Group g : groups) {
+                if (g.getLines().contains(line)) {
+                    repeatLine++;
+                    groupDel = g;
+                } else {
+                }
+                if (repeatLine > 1) {
+                    assert groupDel != null;
+                    g.getLines().addAll(groupDel.getLines());
+                    System.out.println(groupDel.getGroupNumber());
+                    groups.remove(groupDel);
+                    repeatLine = 1;
+                }
+            }
+        }
+
         StringBuilder stringBuilder = new StringBuilder("Всего групп " + groups.size() + "\n");
         int numberGroup = 0;
         TreeSet<Group> sg = groups.stream().sorted().collect(Collectors.toCollection(TreeSet::new));
@@ -94,6 +116,7 @@ public class NumberSeparator {
                 g.addLine(line);
             }
         }
+        groups.remove(group);
     }
 
     private void addLines(Line line, Line oldLine) {
