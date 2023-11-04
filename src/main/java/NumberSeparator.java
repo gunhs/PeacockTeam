@@ -3,131 +3,109 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class NumberSeparator {
-    HashSet<Integer> numbersBadLines = new HashSet<>();
-    TreeMap<Integer, Set<Integer>> groups = new TreeMap<>();
-    int countOfGroup = 0;
+    HashSet<Integer> numbers = new HashSet<>();
+    TreeSet<Group> groups = new TreeSet<>();
+    int numberGroup = 0;
 
     public void numberSeparate(List<String> lines, Path path) throws IOException {
-        List<String[]> wordsInLine = new ArrayList<>();
-        int i = 1;
-        for (int j = 0; j < lines.size(); j++) {
-            String[] words = lines.get(j).split(";");
-            if (checkLine(words)) {
-                numbersBadLines.add(j);
-            }
-            wordsInLine.add(words);
+        List<Line> lineList = new ArrayList<>();
+        for (int i = 0; i < lines.size(); i++) {
+            Line line = new Line(i, lines.get(i));
+            lineList.add(line);
         }
         int maxCountElemntIsString = 0;
-        for (int j = 0; j < wordsInLine.size(); j++) {
-            maxCountElemntIsString = Math.max(wordsInLine.get(i).length, maxCountElemntIsString);
-        }
+        maxCountElemntIsString = lineList.stream().mapToInt(Line::getCountElements).max().orElse(maxCountElemntIsString);
+
         for (int j = 0; j < maxCountElemntIsString; j++) {
-            lineWalker(lines, wordsInLine, j);
+            lineWalker(lineList, j);
         }
-
-        TreeMap<Integer, Set<String[]>> groupLines = new TreeMap<>();
-        groups.forEach((k, v) -> {
-            Set<String[]> buffer = new HashSet<>();
-            v.forEach(n -> buffer.add(wordsInLine.get(n)));
-            groupLines.put(k, buffer);
-        });
-
-        Comparator<Integer> comparator = (key1, key2) -> {
-            int size1 = groupLines.get(key1).stream().mapToInt(l -> l.length)
-                    .max().orElse(0);
-            int size2 = groupLines.get(key2).stream().mapToInt(l -> l.length)
-                    .max().orElse(0);
-            return Integer.compare(size1, size2);
-        };
-        TreeMap<Integer, Set<String[]>> sortedMap = new TreeMap<>(comparator);
-        sortedMap.putAll(groupLines);
         StringBuilder stringBuilder = new StringBuilder("Всего групп " + groups.size() + "\n");
-        AtomicInteger numberGroup = new AtomicInteger(1);
-        sortedMap.forEach((k, v) -> stringBuilder.append(fileWriter(numberGroup.getAndIncrement(), v)));
-//        groups.forEach((k, v) -> stringBuilder.append(fileWriter(k, v)));
+        int numberGroup = 0;
+        TreeSet<Group> sg = groups.stream().sorted().collect(Collectors.toCollection(TreeSet::new));
+        for (Group group : sg) {
+            numberGroup++;
+            stringBuilder.append(fileWriter(group, numberGroup));
+        }
         try (BufferedWriter writer = Files.newBufferedWriter(path)) {
             writer.write(stringBuilder.toString().strip());
         }
     }
 
-    private String fileWriter(int numberGroup, Set<String[]> words) {
+    private String fileWriter(Group group, int numberGroup) {
         Set<String> linesInGroup = new LinkedHashSet<>();
-        for (String[] i : words) {
-            String line = String.join(";", i);
-            linesInGroup.add(line);
+        for (Line l : group.getLines()) {
+            linesInGroup.add(l.getLine());
         }
-        return "Группа " + numberGroup + "\n" + String.join("\n", linesInGroup) + "\n";
+        return "Группа " + numberGroup + "\n"
+                + String.join("\n", linesInGroup) + "\n";
     }
 
-    private void lineWalker(List<String> lines, List<String[]> wordsInLine, int j) {
-        HashMap<String, Integer> map = new HashMap<>();
-        HashMap<String, Set<Integer>> groupInColumn = new HashMap<>();
-        for (int k = 0; k < lines.size(); k++) {
-            if ((j > wordsInLine.get(k).length - 1) || numbersBadLines.contains(k)) {
+    private void lineWalker(List<Line> lineList, int numberColumn) {
+        HashMap<String, Integer> wordsInColumn = new HashMap<>();
+        HashMap<String, Group> wordGroup = new HashMap<>();
+        HashSet<Integer> numbersLinesInColumn = new HashSet<>();
+        for (int i = 0; i < lineList.size(); i++) {
+            Line line = lineList.get(i);
+            if ((numberColumn > (line.getCountElements() - 1)) || line.isBadLine()) {
                 continue;
             }
-            String currentString = wordsInLine.get(k)[j];
+            String currentString = line.getWords()[numberColumn];
             if (currentString.matches("\"\"")) {
                 continue;
             }
-            if (map.containsKey(currentString)) {
-                int numberOldLine = map.get(currentString);
-                if (checkGroup(k, numberOldLine, groupInColumn.get(currentString))) {
-                    groupInColumn.remove(currentString);
-                    map.put(currentString, k);
+            if (wordsInColumn.containsKey(currentString)) {
+                int numberOldLine = wordsInColumn.get(currentString);
+                if (numbers.contains(i) || numbers.contains(numberOldLine)) {
+                    if (wordGroup.containsKey(currentString)) {
+                        addGroup(wordGroup.get(currentString), lineList.get(i));
+                        wordGroup.remove(currentString);
+                    } else {
+                        addLines(lineList.get(i), lineList.get(numberOldLine));
+                    }
                     continue;
                 }
-                if (groupInColumn.get(currentString) == null) {
-                    Set<Integer> numbersLinesInGroup = new LinkedHashSet<>();
-                    numbersLinesInGroup.add(numberOldLine);
-                    numbersLinesInGroup.add(k);
-                    groupInColumn.put(currentString, numbersLinesInGroup);
+                if (wordGroup.get(currentString) == null) {
+                    numberGroup++;
+                    Group group = new Group();
+                    group.setGroupNumber(numberGroup);
+                    group.addLine(lineList.get(numberOldLine));
+                    group.addLine(lineList.get(i));
+                    wordGroup.put(currentString, group);
+                    numbersLinesInColumn.add(i);
+                    numbersLinesInColumn.add(numberOldLine);
                 } else {
-                    groupInColumn.get(currentString).add(k);
+                    wordGroup.get(currentString).addLine(lineList.get(i));
+                    numbersLinesInColumn.add(i);
                 }
             }
-            map.put(currentString, k);
+            wordsInColumn.put(currentString, i);
         }
+        wordGroup.forEach((k, v) -> groups.add(v));
+        numbers.addAll(numbersLinesInColumn);
+    }
 
-        for (Map.Entry<String, Set<Integer>> entry : groupInColumn.entrySet()) {
-            countOfGroup++;
-            groups.put(countOfGroup, entry.getValue());
+    private void addGroup(Group group, Line line) {
+        for (Group g : groups) {
+            if (g.getLines().contains(line)) {
+                g.getLines().addAll(group.getLines());
+                g.addLine(line);
+            }
+        }
+    }
+
+    private void addLines(Line line, Line oldLine) {
+        for (Group g : groups) {
+            if (g.getLines().contains(line) || g.getLines().contains(oldLine)) {
+                g.addLine(oldLine);
+                g.addLine(line);
+            }
         }
     }
 
     public List<String> loadFile(Path path) throws IOException {
         return Files.readAllLines(path);
-    }
-
-    private boolean checkGroup(int k, int numberOldLine, Set<Integer> oldNumbers) {
-        for (Map.Entry<Integer, Set<Integer>> entry : groups.entrySet()) {
-            if (entry.getValue().contains(k)) {
-                if (oldNumbers != null) {
-                    oldNumbers.forEach(n -> groups.get(entry.getKey()).add(n));
-                }
-                groups.get(entry.getKey()).add(numberOldLine);
-                return true;
-            } else if (entry.getValue().contains(numberOldLine)) {
-                groups.get(entry.getKey()).add(k);
-                if (oldNumbers != null) {
-                    oldNumbers.forEach(n -> groups.get(entry.getKey()).add(n));
-                }
-                return true;
-            }
-        }
-        return false;
-    }
-
-
-    private boolean checkLine(String[] words) {
-        for (String w : words) {
-            if (!w.matches("\"\\d*\"")) {
-                return true;
-            }
-        }
-        return false;
     }
 }
