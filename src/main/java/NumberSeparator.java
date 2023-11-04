@@ -25,19 +25,19 @@ public class NumberSeparator {
 
         HashSet<Line> lineHashSet = new HashSet<>();
         groups.forEach(g -> lineHashSet.addAll(g.getLines()));
-        Group groupDel = null;
+
         for (Line line : lineHashSet) {
+            Group groupDel = null;
             int repeatLine = 0;
             for (Group g : groups) {
                 if (g.getLines().contains(line)) {
                     repeatLine++;
-                    groupDel = g;
-                } else {
+                    if (repeatLine == 1) {
+                        groupDel = g;
+                    }
                 }
                 if (repeatLine > 1) {
-                    assert groupDel != null;
                     g.getLines().addAll(groupDel.getLines());
-                    System.out.println(groupDel.getGroupNumber());
                     groups.remove(groupDel);
                     repeatLine = 1;
                 }
@@ -83,7 +83,6 @@ public class NumberSeparator {
                 if (numbers.contains(i) || numbers.contains(numberOldLine)) {
                     if (wordGroup.containsKey(currentString)) {
                         addGroup(wordGroup.get(currentString), lineList.get(i));
-                        wordGroup.remove(currentString);
                     } else {
                         addLines(lineList.get(i), lineList.get(numberOldLine));
                     }

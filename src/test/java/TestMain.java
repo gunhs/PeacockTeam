@@ -92,5 +92,4 @@ public class TestMain {
         List<String> actualLines = numberSeparator.loadFile(path);
         assertIterableEquals(expectedLines, actualLines);
     }
-
 }
