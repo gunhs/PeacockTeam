@@ -4,86 +4,91 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-
 public class NumberSeparator {
-    TreeSet<Group> groups = new TreeSet<>();
-    int numberGroup = 1;
+    int countGroup = 1;
+    TreeMap<Integer, List<Integer>> allGroups = new TreeMap<>();
 
     public void numberSeparate(List<String> lines, Path path) throws IOException {
-
-        List<Line> lineList = new ArrayList<>();
-        for (int i = 0; i < lines.size(); i++) {
-            Line line = new Line(i, lines.get(i));
-            lineList.add(line);
+        int maxCountElementsInString = 0;
+        List<String[]> wordsInLines = new ArrayList<>();
+        for (String line : lines) {
+            String[] words = line.split(";");
+            maxCountElementsInString = Math.max(words.length, maxCountElementsInString);
+            wordsInLines.add(words);
         }
-        int maxCountElemntIsString = 0;
-        maxCountElemntIsString = lineList.stream().mapToInt(Line::getCountElements).max().orElse(maxCountElemntIsString);
-
-        for (int j = 0; j < maxCountElemntIsString; j++) {
-            ColumnWalker(lineList, j);
+        for (int i = 0; i < maxCountElementsInString; i++) {
+            ColumnWalker(lines, i, wordsInLines);
         }
-        TreeSet<Group> treeGroups = mergeGroups();
+
+        TreeMap<Integer, List<Integer>> treeGroups = mergeGroups();
         StringBuilder stringBuilder = new StringBuilder("Всего групп " + treeGroups.size() + "\n");
-        int numberGroup = 1;
-        for (Group g : treeGroups) {
-            stringBuilder.append(fileWriter(g, numberGroup++));
+
+        for (Map.Entry<Integer, List<Integer>> group : treeGroups.entrySet()) {
+            stringBuilder.append(fileWriter(group.getValue(), group.getKey(), lines));
         }
+
         try (BufferedWriter writer = Files.newBufferedWriter(path)) {
             writer.write(stringBuilder.toString().strip());
         }
     }
 
-    private String fileWriter(Group group, int numberGroup) {
+    private String fileWriter(List<Integer> numberLines, int numberGroup, List<String> lines) {
         Set<String> linesInGroup = new LinkedHashSet<>();
-        for (Line l : group.getLines()) {
-            linesInGroup.add(l.getLine());
+        for (int i = 0; i < numberLines.size(); i++) {
+            if (numberLines.contains(i)) {
+                linesInGroup.add(lines.get(i));
+            }
         }
         return "Группа " + numberGroup + "\n"
                 + String.join("\n", linesInGroup) + "\n";
     }
 
-    private void ColumnWalker(List<Line> lineList, int numberColumn) {
+    private void ColumnWalker(List<String> lineList, int numberColumn, List<String[]> words) {
         HashMap<String, Integer> wordsInColumn = new HashMap<>();
+        HashMap<String, List<Integer>> numberLinesInGroup = new HashMap<>();
         for (int i = 0; i < lineList.size(); i++) {
-            Line line = lineList.get(i);
-            if ((numberColumn > (line.getCountElements() - 1)) || line.isBadLine()) {
+            if (numberColumn > words.get(i).length - 1) {
                 continue;
             }
-            String currentString = line.getWords()[numberColumn];
-            if (currentString.matches("\"\"")) {
+            String currentWord = words.get(i)[numberColumn];
+            if (!currentWord.matches("\"[\\d.]+\"") || currentWord.equals("\"\"") || currentWord.isEmpty()) {
                 continue;
             }
-            if (wordsInColumn.containsKey(currentString)) {
-                int numberOldLine = wordsInColumn.get(currentString);
-                Group group = new Group();
-                group.setGroupNumber(numberGroup++);
-                group.addLine(lineList.get(numberOldLine));
-                group.addLine(line);
-                groups.add(group);
+            if (wordsInColumn.containsKey(currentWord)) {
+                if (numberLinesInGroup.get(currentWord) == null) {
+                    List<Integer> list = new ArrayList<>();
+                    list.add(wordsInColumn.get(currentWord));
+                    list.add(i);
+                    numberLinesInGroup.put(currentWord, list);
+                } else {
+                    numberLinesInGroup.get(currentWord).add(i);
+                }
             }
-            wordsInColumn.put(currentString, i);
+            wordsInColumn.put(currentWord, i);
         }
+        TreeMap<Integer, List<Integer>> newGroups = new TreeMap<>();
+        for (Map.Entry<String, List<Integer>> entry : numberLinesInGroup.entrySet()) {
+            newGroups.put(countGroup++, entry.getValue());
+        }
+        allGroups.putAll(newGroups);
     }
 
-    private TreeSet<Group> mergeGroups() {
-        TreeSet<Group> mergedObjects = new TreeSet<>();
-        for (Group group : groups) {
+    private TreeMap<Integer, List<Integer>> mergeGroups() {
+        TreeMap<Integer, List<Integer>> treeGroup = new TreeMap<>();
+        int numberGroup = 0;
+        for (Map.Entry<Integer, List<Integer>> group : allGroups.entrySet()) {
             boolean merged = false;
-            for (Group mergedObj : mergedObjects) {
-                if (!Collections.disjoint(group.getLines(), mergedObj.getLines())) {
-                    Set<Line> newLines = group.getLines();
-                    newLines.addAll(mergedObj.getLines());
-                    mergedObj.getLines().clear();
-                    mergedObj.getLines().addAll(newLines);
+            for (Map.Entry<Integer, List<Integer>> mergeEntry : treeGroup.entrySet()) {
+                if (!Collections.disjoint(group.getValue(), mergeEntry.getValue())) {
+                    mergeEntry.getValue().addAll(group.getValue());
                     merged = true;
-                    break;
                 }
             }
             if (!merged) {
-                mergedObjects.add(group);
+                treeGroup.put(++numberGroup, group.getValue());
             }
         }
-        return mergedObjects;
+        return treeGroup;
     }
 
     public List<String> loadFile(Path path) throws IOException {
