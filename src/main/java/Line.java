@@ -20,7 +20,7 @@ public class Line {
 
     private boolean checkLine(String[] words) {
         for (String w : words) {
-            if (!w.matches("\"\\d*\"")) {
+            if (!w.matches("\"[\\d\\.]*\"")) {
                 return true;
             }
         }

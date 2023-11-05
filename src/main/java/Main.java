@@ -14,7 +14,7 @@ public class Main {
 //        String fileName = args[0];
         Path path = Path.of("out.txt");
         NumberSeparator numberSeparator = new NumberSeparator();
-        List<String> lines = numberSeparator.loadFile(Paths.get("data/lng.txt"));
+        List<String> lines = numberSeparator.loadFile(Paths.get("data/lng-big.csv"));
 //        List<String> lines = numberSeparator.loadFile(Paths.get(fileName));
         numberSeparator.numberSeparate(lines, path);
         System.out.println(((System.currentTimeMillis() - start) / 1000) + " sec");

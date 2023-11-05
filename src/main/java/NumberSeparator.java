@@ -3,14 +3,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
+
 
 public class NumberSeparator {
-    HashSet<Integer> numbers = new HashSet<>();
     TreeSet<Group> groups = new TreeSet<>();
-    int numberGroup = 0;
+    int numberGroup = 1;
 
     public void numberSeparate(List<String> lines, Path path) throws IOException {
+
         List<Line> lineList = new ArrayList<>();
         for (int i = 0; i < lines.size(); i++) {
             Line line = new Line(i, lines.get(i));
@@ -20,36 +20,13 @@ public class NumberSeparator {
         maxCountElemntIsString = lineList.stream().mapToInt(Line::getCountElements).max().orElse(maxCountElemntIsString);
 
         for (int j = 0; j < maxCountElemntIsString; j++) {
-            lineWalker(lineList, j);
+            ColumnWalker(lineList, j);
         }
-
-        HashSet<Line> lineHashSet = new HashSet<>();
-        groups.forEach(g -> lineHashSet.addAll(g.getLines()));
-
-        for (Line line : lineHashSet) {
-            Group groupDel = null;
-            int repeatLine = 0;
-            for (Group g : groups) {
-                if (g.getLines().contains(line)) {
-                    repeatLine++;
-                    if (repeatLine == 1) {
-                        groupDel = g;
-                    }
-                }
-                if (repeatLine > 1) {
-                    g.getLines().addAll(groupDel.getLines());
-                    groups.remove(groupDel);
-                    repeatLine = 1;
-                }
-            }
-        }
-
-        StringBuilder stringBuilder = new StringBuilder("Всего групп " + groups.size() + "\n");
-        int numberGroup = 0;
-        TreeSet<Group> sg = groups.stream().sorted().collect(Collectors.toCollection(TreeSet::new));
-        for (Group group : sg) {
-            numberGroup++;
-            stringBuilder.append(fileWriter(group, numberGroup));
+        TreeSet<Group> treeGroups = mergeGroups();
+        StringBuilder stringBuilder = new StringBuilder("Всего групп " + treeGroups.size() + "\n");
+        int numberGroup = 1;
+        for (Group g : treeGroups) {
+            stringBuilder.append(fileWriter(g, numberGroup++));
         }
         try (BufferedWriter writer = Files.newBufferedWriter(path)) {
             writer.write(stringBuilder.toString().strip());
@@ -65,10 +42,8 @@ public class NumberSeparator {
                 + String.join("\n", linesInGroup) + "\n";
     }
 
-    private void lineWalker(List<Line> lineList, int numberColumn) {
+    private void ColumnWalker(List<Line> lineList, int numberColumn) {
         HashMap<String, Integer> wordsInColumn = new HashMap<>();
-        HashMap<String, Group> wordGroup = new HashMap<>();
-        HashSet<Integer> numbersLinesInColumn = new HashSet<>();
         for (int i = 0; i < lineList.size(); i++) {
             Line line = lineList.get(i);
             if ((numberColumn > (line.getCountElements() - 1)) || line.isBadLine()) {
@@ -80,51 +55,35 @@ public class NumberSeparator {
             }
             if (wordsInColumn.containsKey(currentString)) {
                 int numberOldLine = wordsInColumn.get(currentString);
-                if (numbers.contains(i) || numbers.contains(numberOldLine)) {
-                    if (wordGroup.containsKey(currentString)) {
-                        addGroup(wordGroup.get(currentString), lineList.get(i));
-                    } else {
-                        addLines(lineList.get(i), lineList.get(numberOldLine));
-                    }
-                    continue;
-                }
-                if (wordGroup.get(currentString) == null) {
-                    numberGroup++;
-                    Group group = new Group();
-                    group.setGroupNumber(numberGroup);
-                    group.addLine(lineList.get(numberOldLine));
-                    group.addLine(lineList.get(i));
-                    wordGroup.put(currentString, group);
-                    numbersLinesInColumn.add(i);
-                    numbersLinesInColumn.add(numberOldLine);
-                } else {
-                    wordGroup.get(currentString).addLine(lineList.get(i));
-                    numbersLinesInColumn.add(i);
-                }
+                Group group = new Group();
+                group.setGroupNumber(numberGroup++);
+                group.addLine(lineList.get(numberOldLine));
+                group.addLine(line);
+                groups.add(group);
             }
             wordsInColumn.put(currentString, i);
         }
-        wordGroup.forEach((k, v) -> groups.add(v));
-        numbers.addAll(numbersLinesInColumn);
     }
 
-    private void addGroup(Group group, Line line) {
-        for (Group g : groups) {
-            if (g.getLines().contains(line)) {
-                g.getLines().addAll(group.getLines());
-                g.addLine(line);
+    private TreeSet<Group> mergeGroups() {
+        TreeSet<Group> mergedObjects = new TreeSet<>();
+        for (Group group : groups) {
+            boolean merged = false;
+            for (Group mergedObj : mergedObjects) {
+                if (!Collections.disjoint(group.getLines(), mergedObj.getLines())) {
+                    Set<Line> newLines = group.getLines();
+                    newLines.addAll(mergedObj.getLines());
+                    mergedObj.getLines().clear();
+                    mergedObj.getLines().addAll(newLines);
+                    merged = true;
+                    break;
+                }
+            }
+            if (!merged) {
+                mergedObjects.add(group);
             }
         }
-        groups.remove(group);
-    }
-
-    private void addLines(Line line, Line oldLine) {
-        for (Group g : groups) {
-            if (g.getLines().contains(line) || g.getLines().contains(oldLine)) {
-                g.addLine(oldLine);
-                g.addLine(line);
-            }
-        }
+        return mergedObjects;
     }
 
     public List<String> loadFile(Path path) throws IOException {
