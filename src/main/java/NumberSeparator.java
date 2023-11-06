@@ -1,94 +1,85 @@
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class NumberSeparator {
-    int countGroup = 1;
-    TreeMap<Integer, List<Integer>> allGroups = new TreeMap<>();
+    Set<Set<Integer>> allGroups = new HashSet<>();
 
-    public void numberSeparate(List<String> lines, Path path) throws IOException {
+    public void numberSeparate(Path pathDst, Path pathSrc, int countLines) throws IOException,
+            InterruptedException, ExecutionException {
         int maxCountElementsInString = 0;
-        List<String[]> wordsInLines = new ArrayList<>();
-        for (String line : lines) {
-            String[] words = line.split(";");
-            maxCountElementsInString = Math.max(words.length, maxCountElementsInString);
-            wordsInLines.add(words);
+        String[][] wordsArray = new String[countLines][];
+        try (BufferedReader reader = new BufferedReader(new FileReader(pathSrc.toFile()))) {
+            String line;
+            int numberLine = 0;
+            while ((line = reader.readLine()) != null) {
+                String[] words = line.split(";");
+                maxCountElementsInString = Math.max(words.length, maxCountElementsInString);
+                wordsArray[numberLine++] = words;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        List<ColumnWalker> tasks = new ArrayList<>();
         for (int i = 0; i < maxCountElementsInString; i++) {
-            ColumnWalker(lines, i, wordsInLines);
+            ColumnWalker columnWalker = new ColumnWalker(i, wordsArray);
+            tasks.add(columnWalker);
         }
-
-        TreeMap<Integer, List<Integer>> treeGroups = mergeGroups();
-        StringBuilder stringBuilder = new StringBuilder("Всего групп " + treeGroups.size() + "\n");
-
-        for (Map.Entry<Integer, List<Integer>> group : treeGroups.entrySet()) {
-            stringBuilder.append(fileWriter(group.getValue(), group.getKey(), lines));
+        List<Future<Set<Set<Integer>>>> futures = executorService.invokeAll(tasks);
+        for (Future<Set<Set<Integer>>> future : futures) {
+            allGroups.addAll(future.get());
         }
-
-        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+        executorService.shutdown();
+        Set<Set<Integer>> groups = mergeGroups();
+        StringBuilder stringBuilder = new StringBuilder("Всего групп " + groups.size() + "\n");
+        int groupNumber = 0;
+        for (Set<Integer> g : groups) {
+            stringBuilder.append(fileWriter(g, ++groupNumber, wordsArray));
+        }
+        try (BufferedWriter writer = Files.newBufferedWriter(pathDst)) {
             writer.write(stringBuilder.toString().strip());
         }
     }
 
-    private String fileWriter(List<Integer> numberLines, int numberGroup, List<String> lines) {
+    private String fileWriter(Set<Integer> numberLines, int numberGroup, String[][] lines) {
         Set<String> linesInGroup = new LinkedHashSet<>();
-        for (int i = 0; i < numberLines.size(); i++) {
-            if (numberLines.contains(i)) {
-                linesInGroup.add(lines.get(i));
+        for (int i : numberLines) {
+            StringBuilder line = new StringBuilder();
+            for (int j = 0; j < lines[i].length; j++) {
+                line.append(lines[i][j]).append(";");
             }
+            line.deleteCharAt(line.length()-1);
+            linesInGroup.add(line.toString());
         }
         return "Группа " + numberGroup + "\n"
                 + String.join("\n", linesInGroup) + "\n";
     }
 
-    private void ColumnWalker(List<String> lineList, int numberColumn, List<String[]> words) {
-        HashMap<String, Integer> wordsInColumn = new HashMap<>();
-        HashMap<String, List<Integer>> numberLinesInGroup = new HashMap<>();
-        for (int i = 0; i < lineList.size(); i++) {
-            if (numberColumn > words.get(i).length - 1) {
-                continue;
-            }
-            String currentWord = words.get(i)[numberColumn];
-            if (!currentWord.matches("\"[\\d.]+\"") || currentWord.equals("\"\"") || currentWord.isEmpty()) {
-                continue;
-            }
-            if (wordsInColumn.containsKey(currentWord)) {
-                if (numberLinesInGroup.get(currentWord) == null) {
-                    List<Integer> list = new ArrayList<>();
-                    list.add(wordsInColumn.get(currentWord));
-                    list.add(i);
-                    numberLinesInGroup.put(currentWord, list);
-                } else {
-                    numberLinesInGroup.get(currentWord).add(i);
-                }
-            }
-            wordsInColumn.put(currentWord, i);
-        }
-        TreeMap<Integer, List<Integer>> newGroups = new TreeMap<>();
-        for (Map.Entry<String, List<Integer>> entry : numberLinesInGroup.entrySet()) {
-            newGroups.put(countGroup++, entry.getValue());
-        }
-        allGroups.putAll(newGroups);
-    }
-
-    private TreeMap<Integer, List<Integer>> mergeGroups() {
-        TreeMap<Integer, List<Integer>> treeGroup = new TreeMap<>();
-        int numberGroup = 0;
-        for (Map.Entry<Integer, List<Integer>> group : allGroups.entrySet()) {
+    private Set<Set<Integer>> mergeGroups() {
+        Set<Set<Integer>> mergeSet = new HashSet<>();
+        for (Set<Integer> s : allGroups) {
             boolean merged = false;
-            for (Map.Entry<Integer, List<Integer>> mergeEntry : treeGroup.entrySet()) {
-                if (!Collections.disjoint(group.getValue(), mergeEntry.getValue())) {
-                    mergeEntry.getValue().addAll(group.getValue());
+            for (Set<Integer> m : mergeSet) {
+                if (!Collections.disjoint(s, m)) {
+                    m.addAll(s);
                     merged = true;
                 }
             }
             if (!merged) {
-                treeGroup.put(++numberGroup, group.getValue());
+                mergeSet.add(s);
             }
         }
-        return treeGroup;
+        return mergeSet;
     }
 
     public List<String> loadFile(Path path) throws IOException {
