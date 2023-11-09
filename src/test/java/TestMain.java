@@ -20,7 +20,7 @@ public class TestMain {
         List<String> srcLines = numberSeparator.loadFile(srcPath);
         List<String> expectedLines = numberSeparator.loadFile(dstPath);
 //        numberSeparator.numberSeparate(srcLines, path, srcPath);
-        numberSeparator.numberSeparate(path, srcPath, srcLines.size());
+        numberSeparator.numberSeparate(path, srcPath);
         List<String> actualLines = numberSeparator.loadFile(path);
         System.out.println(dstPath.toAbsolutePath());
         System.out.println(path.toAbsolutePath());
@@ -37,7 +37,7 @@ public class TestMain {
         List<String> srcLines = numberSeparator.loadFile(srcPath);
         List<String> expectedLines = numberSeparator.loadFile(dstPath);
 //        numberSeparator.numberSeparate(srcLines, path, srcPath);
-        numberSeparator.numberSeparate(path, srcPath, srcLines.size());
+        numberSeparator.numberSeparate(path, srcPath);
         List<String> actualLines = numberSeparator.loadFile(path);
         System.out.println(dstPath.toAbsolutePath());
         System.out.println(path.toAbsolutePath());
@@ -54,7 +54,7 @@ public class TestMain {
         List<String> srcLines = numberSeparator.loadFile(srcPath);
         List<String> expectedLines = numberSeparator.loadFile(dstPath);
 //        numberSeparator.numberSeparate(srcLines, path, srcPath);
-        numberSeparator.numberSeparate(path, srcPath, srcLines.size());
+        numberSeparator.numberSeparate(path, srcPath);
         List<String> actualLines = numberSeparator.loadFile(path);
         System.out.println(dstPath.toAbsolutePath());
         System.out.println(path.toAbsolutePath());
@@ -70,7 +70,7 @@ public class TestMain {
         Path srcPath = Paths.get("data/tests/testThreeLineDuplicateSrc.txt");
         List<String> srcLines = numberSeparator.loadFile(srcPath);
         List<String> expectedLines = numberSeparator.loadFile(dstPath);
-        numberSeparator.numberSeparate(path, srcPath, srcLines.size());
+        numberSeparator.numberSeparate(path, srcPath);
 //        numberSeparator.numberSeparate(srcLines, path, srcPath);
         List<String> actualLines = numberSeparator.loadFile(path);
         System.out.println(dstPath.toAbsolutePath());
@@ -87,7 +87,7 @@ public class TestMain {
         Path srcPath = Paths.get("data/tests/testTwoLineDuplicateSrc.txt");
         List<String> srcLines = numberSeparator.loadFile(srcPath);
         List<String> expectedLines = numberSeparator.loadFile(dstPath);
-        numberSeparator.numberSeparate(path, srcPath, srcLines.size());
+        numberSeparator.numberSeparate(path, srcPath);
 //        numberSeparator.numberSeparate(srcLines, path, srcPath);
         List<String> actualLines = numberSeparator.loadFile(path);
         System.out.println(dstPath.toAbsolutePath());
@@ -104,8 +104,7 @@ public class TestMain {
         Path srcPath = Paths.get("data/tests/testFiveLineTwoGroupSrc.txt");
         List<String> srcLines = numberSeparator.loadFile(srcPath);
         List<String> expectedLines = numberSeparator.loadFile(dstPath);
-        numberSeparator.numberSeparate(path, srcPath, srcLines.size());
-//        numberSeparator.numberSeparate(srcLines, path, srcPath);
+        numberSeparator.numberSeparate(path, srcPath);
         List<String> actualLines = numberSeparator.loadFile(path);
         System.out.println(dstPath.toAbsolutePath());
         System.out.println(path.toAbsolutePath());
@@ -114,15 +113,13 @@ public class TestMain {
 
     @Test
     @DisplayName("5 строчек. 4 и 2 совпадения. Одна группа")
-    void testFiveLineOneGroup() throws IOException, ExecutionException, InterruptedException {
+    void testFiveLineOneGroup() throws IOException {
         NumberSeparator numberSeparator = new NumberSeparator();
         Path path = Paths.get("data/tests/testFiveLineOneGroupResult.txt");
         Path dstPath = Paths.get("data/tests/testFiveLineOneGroupDst.txt");
         Path srcPath = Paths.get("data/tests/testFiveLineOneGroupSrc.txt");
-        List<String> srcLines = numberSeparator.loadFile(srcPath);
         List<String> expectedLines = numberSeparator.loadFile(dstPath);
-        numberSeparator.numberSeparate(path, srcPath, srcLines.size());
-//        numberSeparator.numberSeparate(srcLines, path, srcPath);
+        numberSeparator.numberSeparate(path, srcPath);
         List<String> actualLines = numberSeparator.loadFile(path);
         System.out.println(dstPath.toAbsolutePath());
         System.out.println(path.toAbsolutePath());
