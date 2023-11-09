@@ -23,12 +23,10 @@ public class NumberSeparator {
                     if (positionWordLine.get(j).get(currentWord) != null) {
                         int oldNumber = positionWordLine.get(j).get(currentWord);
                         if (linesGroups.get(i) != null) {
-                            groups.get(linesGroups.get(i)).add(i);
                             groups.get(linesGroups.get(i)).add(oldNumber);
                             linesGroups.put(oldNumber, linesGroups.get(i));
                         } else if (linesGroups.get(oldNumber) != null) {
                             groups.get(linesGroups.get(oldNumber)).add(i);
-                            groups.get(linesGroups.get(oldNumber)).add(oldNumber);
                             linesGroups.put(i, linesGroups.get(oldNumber));
                         } else {
                             int g = groupNumber++;
