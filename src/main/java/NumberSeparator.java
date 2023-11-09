@@ -15,32 +15,70 @@ public class NumberSeparator {
 
     public void numberSeparate(Path pathDst, Path pathSrc, int countLines) throws IOException,
             InterruptedException, ExecutionException {
-        int maxCountElementsInString = 0;
-        String[][] wordsArray = new String[countLines][];
-        try (BufferedReader reader = new BufferedReader(new FileReader(pathSrc.toFile()))) {
-            String line;
-            int numberLine = 0;
-            while ((line = reader.readLine()) != null) {
-                String[] words = line.split(";");
-                maxCountElementsInString = Math.max(words.length, maxCountElementsInString);
-                wordsArray[numberLine++] = words;
+
+        List<String> lines = loadFile(pathSrc);
+        HashMap<Integer, HashMap<String, Set<Integer>>> positionWordGroups = new HashMap<>();
+        for (String line : lines) {
+            String[] words = line.split(";");
+            for (int i = 0; i < words.length ; i++) {
+                String currentWord = words[i];
+                if (!currentWord.matches("\"[\\d.]+\"") || currentWord.equals("\"\"") || currentWord.isEmpty()) {
+                    continue;
+                }
+                if (positionWordGroups.get(i).get(currentWord) == null) {
+                    Set<Integer> linesInGroup = new LinkedHashSet<>();
+                    linesInGroup.add(i);
+                    positionWordGroups.get(i).put(currentWord, linesInGroup);
+                } else {
+                    positionWordGroups.get(i).get(currentWord).add(i);
+                }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        }
+        StringBuilder stringBuilder = new StringBuilder("Всего групп \n");
+        for (Map.Entry <Integer, HashMap<String, Set<Integer>>> entry : positionWordGroups.entrySet()){
+            entry.getValue().entrySet().stream().filter(e->e.getValue().size()>1).forEach();
         }
 
-        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        List<ColumnWalker> tasks = new ArrayList<>();
-        for (int i = 0; i < maxCountElementsInString; i++) {
-            ColumnWalker columnWalker = new ColumnWalker(i, wordsArray);
-            tasks.add(columnWalker);
+
+
+
+        int groupNumber = 0;
+        for (Set<Integer> g : groups) {
+            stringBuilder.append(fileWriter(g, ++groupNumber, wordsArray));
         }
-        List<Future<Set<Set<Integer>>>> futures = executorService.invokeAll(tasks);
-        for (Future<Set<Set<Integer>>> future : futures) {
-            allGroups.addAll(future.get());
+        try (BufferedWriter writer = Files.newBufferedWriter(pathDst)) {
+            writer.write(stringBuilder.toString().strip());
         }
-        executorService.shutdown();
-        Set<Set<Integer>> groups = mergeGroups();
+
+//        int maxCountElementsInString = 0;
+//
+//
+//        String[][] wordsArray = new String[countLines][];
+//        try (BufferedReader reader = new BufferedReader(new FileReader(pathSrc.toFile()))) {
+//            String line;
+//            int numberLine = 0;
+//            while ((line = reader.readLine()) != null) {
+//                String[] words = line.split(";");
+//                maxCountElementsInString = Math.max(words.length, maxCountElementsInString);
+//                wordsArray[numberLine++] = words;
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//
+//
+//        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+//        List<ColumnWalker> tasks = new ArrayList<>();
+//        for (int i = 0; i < maxCountElementsInString; i++) {
+////            ColumnWalker columnWalker = new ColumnWalker(i, wordsArray);
+////            tasks.add(columnWalker);
+//        }
+//        List<Future<Set<Set<Integer>>>> futures = executorService.invokeAll(tasks);
+//        for (Future<Set<Set<Integer>>> future : futures) {
+//            allGroups.addAll(future.get());
+//        }
+//        executorService.shutdown();
+//        Set<Set<Integer>> groups = mergeGroups();
         StringBuilder stringBuilder = new StringBuilder("Всего групп " + groups.size() + "\n");
         int groupNumber = 0;
         for (Set<Integer> g : groups) {
@@ -58,7 +96,7 @@ public class NumberSeparator {
             for (int j = 0; j < lines[i].length; j++) {
                 line.append(lines[i][j]).append(";");
             }
-            line.deleteCharAt(line.length()-1);
+            line.deleteCharAt(line.length() - 1);
             linesInGroup.add(line.toString());
         }
         return "Группа " + numberGroup + "\n"

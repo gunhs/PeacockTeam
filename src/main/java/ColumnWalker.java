@@ -5,13 +5,15 @@ public class ColumnWalker implements Callable<Set<Set<Integer>>> {
     private final int numberColumn;
     private final String[][] words;
 
-    public ColumnWalker(int numberColumn, String[][] words) {
+    public ColumnWalker(int numberColumn, String[][] words, List<String> lines) {
         this.numberColumn = numberColumn;
         this.words = words;
     }
 
     @Override
     public Set<Set<Integer>> call() {
+
+
         HashMap<String, Set<Integer>> wordNumbersLines = new HashMap<>();
         for (int i = 0; i < words.length; i++) {
             if (numberColumn > words[i].length - 1) {
