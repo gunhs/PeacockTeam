@@ -46,3 +46,5 @@ data/tests/testFiveLineOneGroupResult.txt
 data/tests/testTwoLineDuplicateResult.txt
 /data/lng.txt
 /data/lng-big.csv
+/data/tests/testForLineTwoGroupResult.txt
+/lng-big.csv

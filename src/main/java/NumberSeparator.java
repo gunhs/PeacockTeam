@@ -4,88 +4,66 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-
 public class NumberSeparator {
-    TreeSet<Group> groups = new TreeSet<>();
-    int numberGroup = 1;
 
-    public void numberSeparate(List<String> lines, Path path) throws IOException {
-
-        List<Line> lineList = new ArrayList<>();
+    public void numberSeparate(Path pathDst, Path pathSrc) throws IOException {
+        List<String> lines = loadFile(pathSrc);
+        int groupNumber = 0;
+        HashMap<Integer, HashMap<String, Integer>> positionWordLine = new HashMap<>();
+        HashMap<Integer, Integer> linesGroups = new HashMap<>();
+        HashMap<Integer, Set<Integer>> groups = new HashMap<>();
         for (int i = 0; i < lines.size(); i++) {
-            Line line = new Line(i, lines.get(i));
-            lineList.add(line);
-        }
-        int maxCountElemntIsString = 0;
-        maxCountElemntIsString = lineList.stream().mapToInt(Line::getCountElements).max().orElse(maxCountElemntIsString);
-
-        for (int j = 0; j < maxCountElemntIsString; j++) {
-            ColumnWalker(lineList, j);
-        }
-        TreeSet<Group> treeGroups = mergeGroups();
-        StringBuilder stringBuilder = new StringBuilder("Всего групп " + treeGroups.size() + "\n");
-        int numberGroup = 1;
-        for (Group g : treeGroups) {
-            stringBuilder.append(fileWriter(g, numberGroup++));
-        }
-        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
-            writer.write(stringBuilder.toString().strip());
-        }
-    }
-
-    private String fileWriter(Group group, int numberGroup) {
-        Set<String> linesInGroup = new LinkedHashSet<>();
-        for (Line l : group.getLines()) {
-            linesInGroup.add(l.getLine());
-        }
-        return "Группа " + numberGroup + "\n"
-                + String.join("\n", linesInGroup) + "\n";
-    }
-
-    private void ColumnWalker(List<Line> lineList, int numberColumn) {
-        HashMap<String, Integer> wordsInColumn = new HashMap<>();
-        for (int i = 0; i < lineList.size(); i++) {
-            Line line = lineList.get(i);
-            if ((numberColumn > (line.getCountElements() - 1)) || line.isBadLine()) {
-                continue;
-            }
-            String currentString = line.getWords()[numberColumn];
-            if (currentString.matches("\"\"")) {
-                continue;
-            }
-            if (wordsInColumn.containsKey(currentString)) {
-                int numberOldLine = wordsInColumn.get(currentString);
-                Group group = new Group();
-                group.setGroupNumber(numberGroup++);
-                group.addLine(lineList.get(numberOldLine));
-                group.addLine(line);
-                groups.add(group);
-            }
-            wordsInColumn.put(currentString, i);
-        }
-    }
-
-    private TreeSet<Group> mergeGroups() {
-        TreeSet<Group> mergedObjects = new TreeSet<>();
-        for (Group group : groups) {
-            boolean merged = false;
-            for (Group mergedObj : mergedObjects) {
-                if (!Collections.disjoint(group.getLines(), mergedObj.getLines())) {
-                    Set<Line> newLines = group.getLines();
-                    newLines.addAll(mergedObj.getLines());
-                    mergedObj.getLines().clear();
-                    mergedObj.getLines().addAll(newLines);
-                    merged = true;
-                    break;
+            String[] words = lines.get(i).split(";");
+            for (int j = 0; j < words.length; j++) {
+                String currentWord = words[j];
+                if (!currentWord.matches("\"[\\d.]+\"") || currentWord.equals("\"\"") || currentWord.isEmpty()) {
+                    continue;
+                }
+                if (positionWordLine.get(j) != null) {
+                    if (positionWordLine.get(j).get(currentWord) != null) {
+                        int oldNumber = positionWordLine.get(j).get(currentWord);
+                        if (linesGroups.get(i) != null) {
+                            groups.get(linesGroups.get(i)).add(i);
+                            groups.get(linesGroups.get(i)).add(oldNumber);
+                            linesGroups.put(oldNumber, linesGroups.get(i));
+                        } else if (linesGroups.get(oldNumber) != null) {
+                            groups.get(linesGroups.get(oldNumber)).add(i);
+                            groups.get(linesGroups.get(oldNumber)).add(oldNumber);
+                            linesGroups.put(i, linesGroups.get(oldNumber));
+                        } else {
+                            int g = groupNumber++;
+                            Set<Integer> linesInGroup = new HashSet<>();
+                            linesInGroup.add(positionWordLine.get(j).get(currentWord));
+                            linesInGroup.add(i);
+                            groups.put(g, linesInGroup);
+                            linesGroups.put(i, g);
+                            linesGroups.put(oldNumber, g);
+                        }
+                    }
+                    positionWordLine.get(j).put(currentWord, i);
+                } else {
+                    HashMap<String, Integer> wordLines = new HashMap<>();
+                    wordLines.put(currentWord, i);
+                    positionWordLine.put(j, wordLines);
                 }
             }
-            if (!merged) {
-                mergedObjects.add(group);
-            }
         }
-        return mergedObjects;
+        try (BufferedWriter writer = Files.newBufferedWriter(pathDst)) {
+        int countGroups = 0;
+            for (Map.Entry<Integer, Set<Integer>> entry : groups.entrySet()) {
+                if (entry.getValue().size() > 1) {
+                    Set<String> linesInGroup = new LinkedHashSet<>();
+                    for (int line : entry.getValue()) {
+                        linesInGroup.add(lines.get(line));
+                    }
+                    countGroups++;
+                    writer.write("Группа " + countGroups + "\n"
+                            + String.join("\n", linesInGroup) + "\n");
+                }
+            }
+            writer.write("\nКоличество групп: " + countGroups);
+        }
     }
-
     public List<String> loadFile(Path path) throws IOException {
         return Files.readAllLines(path);
     }
