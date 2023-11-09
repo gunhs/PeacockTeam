@@ -5,7 +5,6 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class NumberSeparator {
-    int groupNumber = 1;
 
     public void numberSeparate(Path pathDst, Path pathSrc) throws IOException {
         List<String> lines = loadFile(pathSrc);
@@ -49,27 +48,22 @@ public class NumberSeparator {
                 }
             }
         }
-        StringBuilder stringBuilder = new StringBuilder("Всего групп " + groups.size() + "\n");
-        for (Map.Entry<Integer, Set<Integer>> entry : groups.entrySet()) {
-            if (entry.getValue().size() > 1) {
-                stringBuilder.append(fileWriter(entry.getValue(), lines));
+        try (BufferedWriter writer = Files.newBufferedWriter(pathDst)) {
+        int countGroups = 0;
+            for (Map.Entry<Integer, Set<Integer>> entry : groups.entrySet()) {
+                if (entry.getValue().size() > 1) {
+                    Set<String> linesInGroup = new LinkedHashSet<>();
+                    for (int line : entry.getValue()) {
+                        linesInGroup.add(lines.get(line));
+                    }
+                    countGroups++;
+                    writer.write("Группа " + countGroups + "\n"
+                            + String.join("\n", linesInGroup) + "\n");
+                }
             }
-        }
-        try (
-                BufferedWriter writer = Files.newBufferedWriter(pathDst)) {
-            writer.write(stringBuilder.toString().strip());
+            writer.write("\nКоличество групп: " + countGroups);
         }
     }
-
-    private String fileWriter(Set<Integer> numberLines, List<String> lines) {
-        Set<String> linesInGroup = new LinkedHashSet<>();
-        for (int line : numberLines) {
-            linesInGroup.add(lines.get(line));
-        }
-        return "Группа " + groupNumber++ + "\n"
-                + String.join("\n", linesInGroup) + "\n";
-    }
-
     public List<String> loadFile(Path path) throws IOException {
         return Files.readAllLines(path);
     }
