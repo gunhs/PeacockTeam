@@ -9,11 +9,11 @@ public class NumberSeparator {
     public void numberSeparate(Path pathDst, Path pathSrc) throws IOException {
         List<String> lines = loadFile(pathSrc);
         List<HashMap<String, Integer>> positionWordLine = new ArrayList<>();
-        List<Integer> linesGroups = new ArrayList<>();
-        List<Set<Integer>> groups = new ArrayList<>();
+        int[] linesGroups = new int[lines.size()];
+        List<List<Integer>> groups = new ArrayList<>(lines.size());
         for (int i = 0; i < lines.size(); i++) {
             String[] words = lines.get(i).split(";");
-            linesGroups.add(-1);
+            linesGroups[i] = -1;
             for (int j = 0; j < words.length; j++) {
                 if (positionWordLine.size() == j) {
                     positionWordLine.add(new HashMap<>());
@@ -24,19 +24,19 @@ public class NumberSeparator {
                 }
                 if (positionWordLine.get(j).get(currentWord) != null) {
                     int oldNumber = positionWordLine.get(j).get(currentWord);
-                    if (linesGroups.get(i) != -1) {
-                        groups.get(linesGroups.get(i)).add(oldNumber);
-                        linesGroups.set(oldNumber, linesGroups.get(i));
-                    } else if (linesGroups.get(oldNumber) != -1) {
-                        groups.get(linesGroups.get(oldNumber)).add(i);
-                        linesGroups.set(i, linesGroups.get(oldNumber));
+                    if (linesGroups[i] != -1) {
+                        groups.get(linesGroups[i]).add(oldNumber);
+                        linesGroups[oldNumber] = linesGroups[i];
+                    } else if (linesGroups[oldNumber] != -1) {
+                        groups.get(linesGroups[oldNumber]).add(i);
+                        linesGroups[i] = linesGroups[oldNumber];
                     } else {
-                        Set<Integer> linesInGroup = new HashSet<>();
+                        List<Integer> linesInGroup = new ArrayList<>();
                         linesInGroup.add(oldNumber);
                         linesInGroup.add(i);
                         groups.add(linesInGroup);
-                        linesGroups.set(oldNumber, groups.size() - 1);
-                        linesGroups.set(i, groups.size() - 1);
+                        linesGroups[oldNumber] = groups.size() - 1;
+                        linesGroups[i] = groups.size() - 1;
                     }
                 }
                 positionWordLine.get(j).put(currentWord, i);
@@ -44,7 +44,7 @@ public class NumberSeparator {
         }
         try (BufferedWriter writer = Files.newBufferedWriter(pathDst)) {
             int countGroups = 0;
-            for (Set<Integer> group : groups) {
+            for (List<Integer> group : groups) {
                 if (group.size() > 1) {
                     Set<String> linesInGroup = new LinkedHashSet<>();
                     for (int line : group) {
