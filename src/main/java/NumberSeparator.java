@@ -25,12 +25,26 @@ public class NumberSeparator {
                 Map<String, Integer> wordMap = positionWordLine.get(j);
                 if (wordMap.get(currentWord) != null) {
                     int existingLine = wordMap.get(currentWord);
-                    if (linesGroups[i] != -1) {
-                        groups.get(linesGroups[i]).add(existingLine);
-                        linesGroups[existingLine] = linesGroups[i];
-                    } else if (linesGroups[existingLine] != -1) {
-                        groups.get(linesGroups[existingLine]).add(i);
-                        linesGroups[i] = linesGroups[existingLine];
+                    int existingGroupNumber = linesGroups[existingLine];
+                    int currentGroupNumber = linesGroups[i];
+                    if (currentGroupNumber != -1) {
+                        if (existingGroupNumber == currentGroupNumber) {
+                            continue;
+                        }
+                        if (existingGroupNumber != -1) {
+                            List<Integer> currentGroup = groups.get(currentGroupNumber);
+                            groups.get(existingGroupNumber).addAll(currentGroup);
+                            for (Integer l : groups.get(currentGroupNumber)) {
+                                linesGroups[l] = existingGroupNumber;
+                            }
+                            groups.set(currentGroupNumber, null);
+                        } else {
+                            groups.get(currentGroupNumber).add(existingLine);
+                            linesGroups[existingLine] = currentGroupNumber;
+                        }
+                    } else if (existingGroupNumber != -1) {
+                        groups.get(existingGroupNumber).add(i);
+                        linesGroups[i] = existingGroupNumber;
                     } else {
                         List<Integer> linesInGroup = new ArrayList<>();
                         linesInGroup.add(existingLine);
@@ -47,6 +61,9 @@ public class NumberSeparator {
         try (BufferedWriter writer = Files.newBufferedWriter(pathDst)) {
             int countGroups = 0;
             for (List<Integer> group : groups) {
+                if (group == null) {
+                    continue;
+                }
                 if (group.size() > 1) {
                     Set<String> linesInGroup = new LinkedHashSet<>();
                     for (int line : group) {
@@ -55,7 +72,7 @@ public class NumberSeparator {
                     countGroups++;
                     writer.write("Группа " + countGroups + "\n");
                     for (String l : linesInGroup) {
-                        writer.write(l+"\n");
+                        writer.write(l + "\n");
                     }
                 }
             }
