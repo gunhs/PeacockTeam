@@ -12,8 +12,8 @@ public class NumberSeparator {
         int[] linesGroups = new int[lines.size()];
         List<List<Integer>> groups = new ArrayList<>(lines.size());
         for (int i = 0; i < lines.size(); i++) {
-            String[] words = lines.get(i).split(";");
             linesGroups[i] = -1;
+            String[] words = lines.get(i).split(";");
             for (int j = 0; j < words.length; j++) {
                 if (positionWordLine.size() == j) {
                     positionWordLine.add(new HashMap<>());
@@ -61,19 +61,17 @@ public class NumberSeparator {
         try (BufferedWriter writer = Files.newBufferedWriter(pathDst)) {
             int countGroups = 0;
             for (List<Integer> group : groups) {
-                if (group == null) {
+                if  (group== null){
                     continue;
                 }
-                if (group.size() > 1) {
-                    Set<String> linesInGroup = new LinkedHashSet<>();
-                    for (int line : group) {
-                        linesInGroup.add(lines.get(line));
-                    }
-                    countGroups++;
-                    writer.write("Группа " + countGroups + "\n");
-                    for (String l : linesInGroup) {
-                        writer.write(l + "\n");
-                    }
+                Set<String> linesInGroup = new LinkedHashSet<>();
+                for (int line : group) {
+                    linesInGroup.add(lines.get(line));
+                }
+                countGroups++;
+                writer.write("Группа " + countGroups + "\n");
+                for (String l : linesInGroup) {
+                    writer.write(l + "\n");
                 }
             }
             writer.write("\n" + "Количество групп: " + countGroups + "\n");
