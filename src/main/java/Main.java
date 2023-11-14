@@ -11,14 +11,14 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         long start = System.currentTimeMillis();
-        if (args.length == 0) {
-            System.out.println("Please provide a file name as an argument.");
-            return;
-        }
-
-        String fileName = args[0];
-        Path pathSrc = Paths.get(fileName);
-//        Path pathSrc = Paths.get("lng-big.csv");
+//        if (args.length == 0) {
+//            System.out.println("Please provide a file name as an argument.");
+//            return;
+//        }
+//
+//        String fileName = args[0];
+//        Path pathSrc = Paths.get(fileName);
+        Path pathSrc = Paths.get("lng-big.csv");
 //        Path pathSrc = Paths.get("lng.txt");
         Path pathDst = Paths.get("out.txt");
         numberSeparate(pathDst, pathSrc);
@@ -61,38 +61,42 @@ public class Main {
         }
         Map<String, Integer> wordMap = positionWordLine.get(columnNumber);
         if (wordMap.get(currentWord) != null) {
-            int existingLine = wordMap.get(currentWord);
-            int existingGroupNumber = linesGroups[existingLine];
-            int currentGroupNumber = linesGroups[numberCurrentString];
-            if (currentGroupNumber != -1) {
-                if (existingGroupNumber == currentGroupNumber) {
-                    return;
-                }
-                if (existingGroupNumber != -1) {
-                    List<Integer> currentGroup = groups.get(currentGroupNumber);
-                    groups.get(existingGroupNumber).addAll(currentGroup);
-                    for (Integer l : groups.get(currentGroupNumber)) {
-                        linesGroups[l] = existingGroupNumber;
-                    }
-                    groups.set(currentGroupNumber, null);
-                } else {
-                    groups.get(currentGroupNumber).add(existingLine);
-                    linesGroups[existingLine] = currentGroupNumber;
-                }
-            } else if (existingGroupNumber != -1) {
-                groups.get(existingGroupNumber).add(numberCurrentString);
-                linesGroups[numberCurrentString] = existingGroupNumber;
-            } else {
-                List<Integer> linesInGroup = new ArrayList<>();
-                linesInGroup.add(existingLine);
-                linesInGroup.add(numberCurrentString);
-                groups.add(linesInGroup);
-                int groupNumber = groups.size() - 1;
-                linesGroups[existingLine] = groupNumber;
-                linesGroups[numberCurrentString] = groupNumber;
-            }
+            mergeGroups(wordMap, numberCurrentString, currentWord);
         }
         positionWordLine.get(columnNumber).put(currentWord, numberCurrentString);
+    }
+
+    private static void mergeGroups(Map<String, Integer> wordMap,  int numberCurrentString, String currentWord){
+        int existingLine = wordMap.get(currentWord);
+        int existingGroupNumber = linesGroups[existingLine];
+        int currentGroupNumber = linesGroups[numberCurrentString];
+        if (currentGroupNumber != -1) {
+            if (existingGroupNumber == currentGroupNumber) {
+                return;
+            }
+            if (existingGroupNumber != -1) {
+                List<Integer> currentGroup = groups.get(currentGroupNumber);
+                groups.get(existingGroupNumber).addAll(currentGroup);
+                for (Integer l : groups.get(currentGroupNumber)) {
+                    linesGroups[l] = existingGroupNumber;
+                }
+                groups.set(currentGroupNumber, null);
+            } else {
+                groups.get(currentGroupNumber).add(existingLine);
+                linesGroups[existingLine] = currentGroupNumber;
+            }
+        } else if (existingGroupNumber != -1) {
+            groups.get(existingGroupNumber).add(numberCurrentString);
+            linesGroups[numberCurrentString] = existingGroupNumber;
+        } else {
+            List<Integer> linesInGroup = new ArrayList<>();
+            linesInGroup.add(existingLine);
+            linesInGroup.add(numberCurrentString);
+            groups.add(linesInGroup);
+            int groupNumber = groups.size() - 1;
+            linesGroups[existingLine] = groupNumber;
+            linesGroups[numberCurrentString] = groupNumber;
+        }
     }
 
 
