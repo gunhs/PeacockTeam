@@ -36,7 +36,7 @@ public class Main {
                 numberCurrentString++;
                 String[] words = currentString.split(";");
                 for (String w : words) {
-                    if (!w.matches("^\"[\\d\\.]+\"$")) {
+                    if (!w.matches("^(\"[\\d\\.]*\")*$")) {
                         badLine = true;
                         break;
                     }
@@ -53,8 +53,6 @@ public class Main {
     }
 
     private static void lineHandler(String[] words, int numberCurrentString) {
-
-
         linesGroups[numberCurrentString] = -1;
         for (int j = 0; j < words.length; j++) {
             String currentWord = words[j];
