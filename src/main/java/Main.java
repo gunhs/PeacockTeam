@@ -32,18 +32,8 @@ public class Main {
             positionWordLine = new ArrayList<>();
             String currentString;
             while ((currentString = reader.readLine()) != null) {
-                boolean badLine = false;
                 numberCurrentString++;
                 String[] words = currentString.split(";");
-                for (String w : words) {
-                    if (!w.matches("^(\"[\\d\\.]*\")*$")) {
-                        badLine = true;
-                        break;
-                    }
-                }
-                if (badLine) {
-                    continue;
-                }
                 lineHandler(words, numberCurrentString);
             }
             linesGroups = null;
@@ -53,6 +43,11 @@ public class Main {
     }
 
     private static void lineHandler(String[] words, int numberCurrentString) {
+        for (String w : words) {
+            if (!w.matches("^(\"[\\d\\.]*\")*$")) {
+                return;
+            }
+        }
         linesGroups[numberCurrentString] = -1;
         for (int j = 0; j < words.length; j++) {
             String currentWord = words[j];
