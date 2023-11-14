@@ -115,6 +115,9 @@ public class Main {
                 for (int line : group) {
                     linesInGroup.add(lines.get(line));
                 }
+                if (linesInGroup.size()<2){
+                    continue;
+                }
                 countGroups++;
                 writer.write("Группа " + countGroups + "\n");
                 for (String l : linesInGroup) {
@@ -122,6 +125,7 @@ public class Main {
                 }
             }
             writer.write("\n" + "Количество групп: " + countGroups + "\n");
+            System.out.println("Всего групп: " + countGroups);
         }
     }
 
