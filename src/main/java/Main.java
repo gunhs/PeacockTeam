@@ -11,15 +11,13 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         long start = System.currentTimeMillis();
-//        if (args.length == 0) {
-//            System.out.println("Please provide a file name as an argument.");
-//            return;
-//        }
-//
-//        String fileName = args[0];
-//        Path pathSrc = Paths.get(fileName);
-        Path pathSrc = Paths.get("lng-big.csv");
-//        Path pathSrc = Paths.get("lng.txt");
+        if (args.length == 0) {
+            System.out.println("Please provide a file name as an argument.");
+            return;
+        }
+
+        String fileName = args[0];
+        Path pathSrc = Paths.get(fileName);
         Path pathDst = Paths.get("out.txt");
         numberSeparate(pathDst, pathSrc);
         System.out.println(((System.currentTimeMillis() - start) / 1000) + " sec");
@@ -34,8 +32,18 @@ public class Main {
             positionWordLine = new ArrayList<>();
             String currentString;
             while ((currentString = reader.readLine()) != null) {
+                boolean badLine = false;
                 numberCurrentString++;
                 String[] words = currentString.split(";");
+                for (String w : words) {
+                    if (!w.matches("^\"[\\d\\.]+\"$")) {
+                        badLine = true;
+                        break;
+                    }
+                }
+                if (badLine) {
+                    continue;
+                }
                 lineHandler(words, numberCurrentString);
             }
             linesGroups = null;
@@ -45,6 +53,8 @@ public class Main {
     }
 
     private static void lineHandler(String[] words, int numberCurrentString) {
+
+
         linesGroups[numberCurrentString] = -1;
         for (int j = 0; j < words.length; j++) {
             String currentWord = words[j];
@@ -66,7 +76,7 @@ public class Main {
         positionWordLine.get(columnNumber).put(currentWord, numberCurrentString);
     }
 
-    private static void mergeGroups(Map<String, Integer> wordMap,  int numberCurrentString, String currentWord){
+    private static void mergeGroups(Map<String, Integer> wordMap, int numberCurrentString, String currentWord) {
         int existingLine = wordMap.get(currentWord);
         int existingGroupNumber = linesGroups[existingLine];
         int currentGroupNumber = linesGroups[numberCurrentString];

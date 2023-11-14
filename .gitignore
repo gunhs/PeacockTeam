@@ -8,6 +8,7 @@ target/
 .idea/jarRepositories.xml
 .idea/compiler.xml
 .idea/libraries/
+.idea/encodings.xml
 *.iws
 *.iml
 *.ipr
@@ -49,3 +50,4 @@ data/tests/testTwoLineDuplicateResult.txt
 /data/tests/testForLineTwoGroupResult.txt
 /lng-big.csv
 /lng.txt
+/lng.csv
