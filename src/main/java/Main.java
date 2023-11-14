@@ -43,12 +43,12 @@ public class Main {
     }
 
     private static void lineHandler(String[] words, int numberCurrentString) {
+        linesGroups[numberCurrentString] = -1;
         for (String w : words) {
             if (!w.matches("^(\"[\\d\\.]*\")*$")) {
                 return;
             }
         }
-        linesGroups[numberCurrentString] = -1;
         for (int j = 0; j < words.length; j++) {
             String currentWord = words[j];
             wordHandler(numberCurrentString, currentWord, j);
